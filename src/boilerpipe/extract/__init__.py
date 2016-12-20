@@ -10,10 +10,11 @@ import threading
 socket.setdefaulttimeout(15)
 lock = threading.Lock()
 
-InputSource        = jpype.JClass('org.xml.sax.InputSource')
-StringReader       = jpype.JClass('java.io.StringReader')
-HTMLHighlighter    = jpype.JClass('de.l3s.boilerpipe.sax.HTMLHighlighter')
+InputSource = jpype.JClass('org.xml.sax.InputSource')
+StringReader = jpype.JClass('java.io.StringReader')
+HTMLHighlighter = jpype.JClass('de.l3s.boilerpipe.sax.HTMLHighlighter')
 BoilerpipeSAXInput = jpype.JClass('de.l3s.boilerpipe.sax.BoilerpipeSAXInput')
+
 
 class Extractor(object):
     """
@@ -29,16 +30,17 @@ class Extractor(object):
     - CanolaExtractor
     """
     extractor = None
-    source    = None
-    data      = None
-    headers   = {'User-Agent': 'Mozilla/5.0'}
+    source = None
+    data = None
+    headers = {'User-Agent': 'Mozilla/5.0'}
 
     def __init__(self, extractor='DefaultExtractor', **kwargs):
         if kwargs.get('url'):
-            request     = Request(kwargs['url'], headers=self.headers)
-            connection  = urlopen(request)
-            self.data   = connection.read()
-            encoding    = connection.headers['content-type'].lower().split('charset=')[-1]
+            request = Request(kwargs['url'], headers=self.headers)
+            connection = urlopen(request)
+            self.data = connection.read()
+            encoding = connection.headers[
+                'content-type'].lower().split('charset=')[-1]
             if encoding.lower() == 'text/html':
                 encoding = chardet.detect(self.data)['encoding']
             try:
@@ -49,22 +51,23 @@ class Extractor(object):
             self.data = kwargs['html']
             try:
                 if not isinstance(self.data, unicode):
-                    self.data = unicode(self.data, chardet.detect(self.data)['encoding'])
+                    self.data = unicode(
+                        self.data, chardet.detect(self.data)['encoding'])
             except NameError:
                 if not isinstance(self.data, str):
-                    self.data = self.data.decode(chardet.detect(self.data)['encoding'])
+                    self.data = self.data.decode(
+                        chardet.detect(self.data)['encoding'])
         else:
             raise Exception('No text or url provided')
 
         try:
             # make it thread-safe
-            if threading.activeCount() > 1:
-                if jpype.isThreadAttachedToJVM() == False:
-                    jpype.attachThreadToJVM()
+            if not jpype.isThreadAttachedToJVM():
+                jpype.attachThreadToJVM()
             lock.acquire()
 
             self.extractor = jpype.JClass(
-                "de.l3s.boilerpipe.extractors."+extractor).INSTANCE
+                "de.l3s.boilerpipe.extractors." + extractor).INSTANCE
         finally:
             lock.release()
 
@@ -86,11 +89,11 @@ class Extractor(object):
         jpype.java.util.Collections.sort(images)
         images = [
             {
-                'src'   : image.getSrc(),
-                'width' : image.getWidth(),
+                'src': image.getSrc(),
+                'width': image.getWidth(),
                 'height': image.getHeight(),
-                'alt'   : image.getAlt(),
-                'area'  : image.getArea()
+                'alt': image.getAlt(),
+                'area': image.getArea()
             } for image in images
         ]
         return images
